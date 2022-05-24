@@ -1,0 +1,62 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+    <title>Kerbal Maps</title>
+
+    <link rel="stylesheet" href="css/jKSPWAPICore.css" />
+    <link rel="stylesheet" href="css/map.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css"
+          integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=="
+          crossorigin="" />
+
+    <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"
+            integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew=="
+            crossorigin=""></script>
+
+    <script type="text/javascript" src="js/jquery-1.9.1.min.js"></script>
+    <script type="text/javascript" src="js/jKSPWAPICore.js"></script>
+    <script type="text/javascript" src="js/maps/layer-defs.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.6.1/proj4.js"></script>
+
+    <script>
+        function startMap() {
+            var previousBody = -1;
+            var newBody;
+
+            const tm = new TelemachusMaps();
+            const baseLayers = tm.layerDefinitionsAsObject();
+            console.log(baseLayers);
+            const marker = L.marker([0, 0]);
+            const map = new L.map('map', {
+                crs: L.CRS.EPSG4326,
+                zoom: 0,
+                maxZoom: 7,
+                center: [-0.1027, -74.5754],
+                bodyControl: false,
+                layerControl: true,
+                scaleControl: true
+            });
+
+            jQuery(document).ready(function ($) {
+                rawData = [[0]];
+
+                L.control.layers(baseLayers).addTo(map);
+                tm.layerDefinitions[0].layer.addTo(map);
+                marker.addTo(map);
+
+                jKSPWAPI.initPoll("longs=v.long&lat=v.lat&name=v.name&alt=v.altitude&m=v.surfaceVelocity&body=v.body", function (rawData) { }, function (rawData, d) {
+                    if (!isNaN(d.lat) && !isNaN(d.longs)) {
+                        marker.setLatLng([d.lat, (d.longs > 180 ? d.longs - 360.0 : d.longs)]);
+                        marker.bindPopup(d.name + " </br>Altitude: " + (d.alt > 10000 ? (d.alt/1000).toFixed(1) + " km" : d.alt.toFixed() + " m") + "</br>Surface Velocity: " + d.m.toFixed() + " m/s");
+                        marker.update();
+                    }
+                }, rawData)
+            });
+        }
+    </script>
+</head>
+<body onload="startMap();" style="padding: 0; margin: 0;">
+    <div id="map"></div>
+</body>
+</html>
